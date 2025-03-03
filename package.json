@@ -1,0 +1,14 @@
+{
+  "name": "usos-survey-filler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "Konrad Guzek",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "devDependencies": {
+    "@types/jquery": "^3.5.32"
+  }
+}
