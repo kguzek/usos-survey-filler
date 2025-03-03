@@ -62,8 +62,6 @@ class SurveyFiller {
     }
     automaticLogin() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.page.type("#username", USOS_USERNAME);
-            yield this.page.type("#password", USOS_PASSWORD);
             yield this.page.click("button.login");
             yield this.wait();
             if (this.page.url() !== USOS_HOME_URL) {
@@ -74,8 +72,10 @@ class SurveyFiller {
     loginToUsos() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.navigate(USOS_LOGIN_URL);
+            yield this.page.type("#username", USOS_USERNAME);
+            yield this.page.type("#password", USOS_PASSWORD);
             if (USOS_USERNAME === "" || USOS_PASSWORD === "") {
-                yield this.manualLogin("Proszę się zalogować do USOSa");
+                yield this.manualLogin("Proszę się zalogować manualnie.");
             }
             else {
                 yield this.automaticLogin();
@@ -98,8 +98,8 @@ class SurveyFiller {
     }
     fillSurvey(survey) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (survey.link === null) {
-                throw new Error("Survey link is null: " + survey);
+            if (survey == null || survey.link === null) {
+                throw new Error("Survey link is null: " + JSON.stringify(survey));
             }
             console.info("Filling out survey for", survey.name);
             yield this.navigate(survey.link);
@@ -137,11 +137,16 @@ class SurveyFiller {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.init();
             yield this.loginToUsos();
-            do {
+            this.surveys = yield this.getAllSurveys();
+            while (this.surveys.length > 0) {
                 yield this.navigateToSurveys();
-                this.surveys = yield this.getAllSurveys();
-                yield this.fillSurvey(this.surveys[0]);
-            } while (this.surveys.length > 0);
+                const survey = this.surveys.pop();
+                if (survey == null) {
+                    console.warn("Nullish survey, skipping...");
+                    continue;
+                }
+                yield this.fillSurvey(survey);
+            }
             yield this.showAlert("Wszystkie ankiety zostały wypełnione.\nDziękuję za korzystanie z aplikacji!\n\m~ kguzek");
             yield this.browser.close();
         });

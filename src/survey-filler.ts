@@ -55,8 +55,6 @@ export class SurveyFiller {
   }
 
   private async automaticLogin() {
-    await this.page.type("#username", USOS_USERNAME);
-    await this.page.type("#password", USOS_PASSWORD);
     await this.page.click("button.login");
     await this.wait();
     if (this.page.url() !== USOS_HOME_URL) {
@@ -68,8 +66,11 @@ export class SurveyFiller {
 
   private async loginToUsos() {
     await this.navigate(USOS_LOGIN_URL);
+    await this.page.type("#username", USOS_USERNAME);
+    await this.page.type("#password", USOS_PASSWORD);
+
     if (USOS_USERNAME === "" || USOS_PASSWORD === "") {
-      await this.manualLogin("Proszę się zalogować do USOSa");
+      await this.manualLogin("Proszę się zalogować manualnie.");
     } else {
       await this.automaticLogin();
     }
@@ -90,9 +91,9 @@ export class SurveyFiller {
     await this.navigate(USOS_SURVEYS_HOMEPAGE);
   }
 
-  private async fillSurvey(survey: SurveyInfo) {
-    if (survey.link === null) {
-      throw new Error("Survey link is null: " + survey);
+  private async fillSurvey(survey?: SurveyInfo) {
+    if (survey == null || survey.link === null) {
+      throw new Error("Survey link is null: " + JSON.stringify(survey));
     }
     console.info("Filling out survey for", survey.name);
     await this.navigate(survey.link);
@@ -133,11 +134,16 @@ export class SurveyFiller {
     await this.init();
     await this.loginToUsos();
 
-    do {
+    this.surveys = await this.getAllSurveys();
+    while (this.surveys.length > 0) {
       await this.navigateToSurveys();
-      this.surveys = await this.getAllSurveys();
-      await this.fillSurvey(this.surveys[0]);
-    } while (this.surveys.length > 0);
+      const survey = this.surveys.pop();
+      if (survey == null) {
+        console.warn("Nullish survey, skipping...");
+        continue;
+      }
+      await this.fillSurvey(survey);
+    }
 
     await this.showAlert(
       "Wszystkie ankiety zostały wypełnione.\nDziękuję za korzystanie z aplikacji!\n\m~ kguzek",

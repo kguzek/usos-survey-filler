@@ -8,10 +8,15 @@
     "start": "node dist/index.js",
     "build:start": "tsc && node dist/index.js"
   },
+  "bin": {
+    "usos-survey-filler": "dist/index.js"
+  },
   "keywords": [],
   "author": "Konrad Guzek",
   "license": "AGPL-3.0-only",
   "dependencies": {
+    "@inquirer/prompts": "^7.3.2",
+    "commander": "^13.1.0",
     "dotenv": "^16.4.7",
     "puppeteer": "^24.3.0"
   },
