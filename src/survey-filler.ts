@@ -36,13 +36,13 @@ export class SurveyFiller {
   }
 
   private async navigate(url: string) {
-    console.debug(" -->", url);
+    // console.debug(" -->", url);
     await this.page.goto(url, { waitUntil: "networkidle0" });
   }
 
   private showAlert(message: string) {
     return this.page.evaluate(
-      (message) => alert(`[USOS-Survey-Filler] ${message}`),
+      (message) => alert(`[USOS Survey Filler] ${message}`),
       message,
     );
   }
@@ -66,10 +66,21 @@ export class SurveyFiller {
 
   private async loginToUsos() {
     await this.navigate(USOS_LOGIN_URL);
-    await this.page.type("#username", USOS_USERNAME);
-    await this.page.type("#password", USOS_PASSWORD);
+    const usernameEmpty = USOS_USERNAME === "";
+    const passwordEmpty = USOS_PASSWORD === "";
+    await this.page.waitForSelector("#username");
+    if (!usernameEmpty) {
+      await this.page.type("#username", USOS_USERNAME, { delay: 100 });
+    }
+    if (passwordEmpty) {
+      if (!usernameEmpty) {
+        await this.page.focus("#password");
+      }
+    } else {
+      await this.page.type("#password", USOS_PASSWORD, { delay: 100 });
+    }
 
-    if (USOS_USERNAME === "" || USOS_PASSWORD === "") {
+    if (usernameEmpty || passwordEmpty) {
       await this.manualLogin("Proszę się zalogować manualnie.");
     } else {
       await this.automaticLogin();
@@ -146,7 +157,7 @@ export class SurveyFiller {
     }
 
     await this.showAlert(
-      "Wszystkie ankiety zostały wypełnione.\nDziękuję za korzystanie z aplikacji!\n\m~ kguzek",
+      "Wszystkie ankiety zostały wypełnione.\nDziękuję za korzystanie z aplikacji!\n\n~ kguzek",
     );
     await this.browser.close();
   }
