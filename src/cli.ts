@@ -13,7 +13,7 @@ import ora from "ora";
 
 import { SurveyFiller } from "./survey-filler";
 
-const VERSION = process.env.npm_package_version || "1.3.2";
+const VERSION = process.env.npm_package_version || "1.3.5";
 const REPO_URL = "https://github.com/kguzek/usos-survey-filler";
 const KNOWN_ERROR_MESSAGES = [
   "Most likely the page has been closed",
@@ -55,23 +55,36 @@ ${chalk.underline(REPO_URL)}
   },
 );
 
-const cardError = boxen(
-  chalk.white(`
-Wystąpił nieoczekiwany błąd podczas wykonywania aplikacji.
-Jeśli problem będzie się powtarzał, zgłoś go na GitHubie:
-
-${chalk.underline(REPO_URL + "/issues/new")}
-`),
-  {
+const generateErrorCard = (text: string) =>
+  boxen(chalk.white(text), {
     padding: 1,
     margin: 1,
     borderStyle: "round",
     borderColor: "red",
     textAlignment: "center",
-  },
-);
+  });
 
-program.version(VERSION).description("USOS Survey Filler");
+const cardError = generateErrorCard(`
+Wystąpił nieoczekiwany błąd podczas wykonywania aplikacji.
+Jeśli problem będzie się powtarzał, zgłoś go na GitHubie:
+
+${chalk.underline(REPO_URL + "/issues/new")}
+`);
+
+const cardErrorNoHeadless = generateErrorCard(`
+Wystąpił błąd podczas wykonywania aplikacji.
+Spróbuj uruchomić program z flagą -l/--headless:
+
+npx usos-survey-filler -l
+`);
+
+program
+  .version(VERSION)
+  .description("USOS Survey Filler")
+  .option(
+    "-l, --headless",
+    "Uruchom bez interfejsu graficznego (wymaga podania loginu i hasła w CLI)",
+  );
 
 const formatMessage = (emoji: string, message: string) =>
   `\n${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}`;
@@ -99,17 +112,19 @@ program.action(async () => {
   config();
 
   console.log(cardIntro);
+  const options = program.opts();
 
+  const optional = options.headless ? "" : " (opcjonalne)";
   const username =
     process.env.USOS_USERNAME ||
     (await input({
-      message: "👤 Nazwa użytkownika do USOSa (opcjonalne):",
+      message: `👤 Nazwa użytkownika do USOSa${optional}:`,
     }));
 
   const userPassword =
     process.env.USOS_PASSWORD ||
     (await password({
-      message: "🔑 Hasło do USOSa (opcjonalne):",
+      message: `🔑 Hasło do USOSa${optional}:`,
       mask: "*",
     }));
 
@@ -151,23 +166,28 @@ program.action(async () => {
     prefixText: formatInfo("Instalacja ukończona. Uruchamianie programu..."),
   }).start();
   try {
-    const surveyFiller = new SurveyFiller(username, userPassword);
+    const surveyFiller = new SurveyFiller(username, userPassword, options.headless);
     await surveyFiller.start();
     execution.succeed();
+    printInfo(`Wypełnionych ankiet: ${surveyFiller.getSurveysFilled()}`);
     console.log(cardOutro);
   } catch (error) {
-    if (
-      error instanceof Error &&
-      KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))
-    ) {
-      execution.succeed();
-      printInfo("Program zamknięty przez użytkownika.");
-      console.log(cardOutro);
-      return;
+    if (error instanceof Error) {
+      if (KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
+        execution.succeed();
+        printInfo("Program zamknięty przez użytkownika.");
+        console.log(cardOutro);
+        return;
+      }
+      if (error.message === "Tryb headless wymaga podania loginu i hasła.") {
+        execution.fail();
+        printError(error.message);
+        return;
+      }
     }
     execution.fail();
     printWarning(error instanceof Error ? error.message : `Nieznany błąd: ${error}`);
-    console.log(cardError);
+    console.log(options.headless ? cardError : cardErrorNoHeadless);
     process.exitCode = 1;
   }
 });

@@ -20,18 +20,27 @@ export class SurveyFiller {
   private page!: Page;
   private browser!: Browser;
   private surveys: SurveyInfo[] = [];
-
   private usosUsername: string;
   private usosPassword: string;
+  private headless: boolean;
+  private surveysFilled = 0;
 
-  constructor(username?: string, password?: string) {
+  constructor(username?: string, password?: string, headless = false) {
     this.usosUsername = username || "";
     this.usosPassword = password || "";
+    this.headless = headless;
+    if (headless && (this.usosUsername === "" || this.usosPassword === "")) {
+      throw new Error("Tryb headless wymaga podania loginu i hasła.");
+    }
+  }
+
+  getSurveysFilled() {
+    return this.surveysFilled;
   }
 
   private async init() {
     this.browser = await puppeteer.launch({
-      headless: false,
+      headless: this.headless ? undefined : false,
       args: ["--window-size=1600,900", "--window-position=100,100"],
     });
 
@@ -51,6 +60,9 @@ export class SurveyFiller {
   }
 
   private showAlert(message: string) {
+    if (this.headless) {
+      return;
+    }
     return this.page.evaluate(
       (message) => alert(`[USOS Survey Filler] ${message}`),
       message,
@@ -149,6 +161,7 @@ export class SurveyFiller {
     }
     await submitButton.click();
     await this.wait();
+    this.surveysFilled++;
   }
 
   async start() {

@@ -19,13 +19,22 @@ var SurveyFiller = class {
   surveys = [];
   usosUsername;
   usosPassword;
-  constructor(username, password2) {
+  headless;
+  surveysFilled = 0;
+  constructor(username, password2, headless = false) {
     this.usosUsername = username || "";
     this.usosPassword = password2 || "";
+    this.headless = headless;
+    if (headless && (this.usosUsername === "" || this.usosPassword === "")) {
+      throw new Error("Tryb headless wymaga podania loginu i has\u0142a.");
+    }
+  }
+  getSurveysFilled() {
+    return this.surveysFilled;
   }
   async init() {
     this.browser = await puppeteer.launch({
-      headless: false,
+      headless: this.headless ? void 0 : false,
       args: ["--window-size=1600,900", "--window-position=100,100"]
     });
     const pages = await this.browser.pages();
@@ -40,6 +49,9 @@ var SurveyFiller = class {
     await this.page.goto(url, { waitUntil: "networkidle0" });
   }
   showAlert(message) {
+    if (this.headless) {
+      return;
+    }
     return this.page.evaluate(
       (message2) => alert(`[USOS Survey Filler] ${message2}`),
       message
@@ -123,6 +135,7 @@ var SurveyFiller = class {
     }
     await submitButton.click();
     await this.wait();
+    this.surveysFilled++;
   }
   async start() {
     await this.init();
@@ -145,7 +158,7 @@ var SurveyFiller = class {
 };
 
 // src/cli.ts
-var VERSION = process.env.npm_package_version || "1.3.2";
+var VERSION = process.env.npm_package_version || "1.3.5";
 var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
 var KNOWN_ERROR_MESSAGES = [
   "Most likely the page has been closed",
@@ -184,22 +197,29 @@ ${chalk.underline(REPO_URL)}
     textAlignment: "center"
   }
 );
-var cardError = boxen(
-  chalk.white(`
+var generateErrorCard = (text) => boxen(chalk.white(text), {
+  padding: 1,
+  margin: 1,
+  borderStyle: "round",
+  borderColor: "red",
+  textAlignment: "center"
+});
+var cardError = generateErrorCard(`
 Wyst\u0105pi\u0142 nieoczekiwany b\u0142\u0105d podczas wykonywania aplikacji.
 Je\u015Bli problem b\u0119dzie si\u0119 powtarza\u0142, zg\u0142o\u015B go na GitHubie:
 
 ${chalk.underline(REPO_URL + "/issues/new")}
-`),
-  {
-    padding: 1,
-    margin: 1,
-    borderStyle: "round",
-    borderColor: "red",
-    textAlignment: "center"
-  }
+`);
+var cardErrorNoHeadless = generateErrorCard(`
+Wyst\u0105pi\u0142 b\u0142\u0105d podczas wykonywania aplikacji.
+Spr\xF3buj uruchomi\u0107 program z flag\u0105 -l/--headless:
+
+npx usos-survey-filler -l
+`);
+program.version(VERSION).description("USOS Survey Filler").option(
+  "-l, --headless",
+  "Uruchom bez interfejsu graficznego (wymaga podania loginu i has\u0142a w CLI)"
 );
-program.version(VERSION).description("USOS Survey Filler");
 var formatMessage = (emoji, message) => `
 ${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}`;
 var formatInfo = (message) => formatMessage("\u{1F916}", chalk.cyan(message));
@@ -222,11 +242,13 @@ function getPuppeteerPlatform(nodePlatform) {
 program.action(async () => {
   config();
   console.log(cardIntro);
+  const options = program.opts();
+  const optional = options.headless ? "" : " (opcjonalne)";
   const username = process.env.USOS_USERNAME || await input({
-    message: "\u{1F464} Nazwa u\u017Cytkownika do USOSa (opcjonalne):"
+    message: `\u{1F464} Nazwa u\u017Cytkownika do USOSa${optional}:`
   });
   const userPassword = process.env.USOS_PASSWORD || await password({
-    message: "\u{1F511} Has\u0142o do USOSa (opcjonalne):",
+    message: `\u{1F511} Has\u0142o do USOSa${optional}:`,
     mask: "*"
   });
   if (userPassword !== "" || username !== "") {
@@ -262,20 +284,28 @@ USOS_PASSWORD=${userPassword}`;
     prefixText: formatInfo("Instalacja uko\u0144czona. Uruchamianie programu...")
   }).start();
   try {
-    const surveyFiller = new SurveyFiller(username, userPassword);
+    const surveyFiller = new SurveyFiller(username, userPassword, options.headless);
     await surveyFiller.start();
     execution.succeed();
+    printInfo(`Wype\u0142nionych ankiet: ${surveyFiller.getSurveysFilled()}`);
     console.log(cardOutro);
   } catch (error) {
-    if (error instanceof Error && KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
-      execution.succeed();
-      printInfo("Program zamkni\u0119ty przez u\u017Cytkownika.");
-      console.log(cardOutro);
-      return;
+    if (error instanceof Error) {
+      if (KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
+        execution.succeed();
+        printInfo("Program zamkni\u0119ty przez u\u017Cytkownika.");
+        console.log(cardOutro);
+        return;
+      }
+      if (error.message === "Tryb headless wymaga podania loginu i has\u0142a.") {
+        execution.fail();
+        printError(error.message);
+        return;
+      }
     }
     execution.fail();
     printWarning(error instanceof Error ? error.message : `Nieznany b\u0142\u0105d: ${error}`);
-    console.log(cardError);
+    console.log(options.headless ? cardError : cardErrorNoHeadless);
     process.exitCode = 1;
   }
 });
