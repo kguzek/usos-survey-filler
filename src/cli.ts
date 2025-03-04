@@ -76,7 +76,9 @@ program.version(VERSION).description("USOS Survey Filler");
 const formatMessage = (emoji: string, message: string) =>
   `\n${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}`;
 const formatInfo = (message: string) => formatMessage("🤖", chalk.cyan(message));
+const printInfo = (message: string) => console.info(formatInfo(message));
 const formatError = (message: string) => "\n" + formatMessage("❌", chalk.red(message));
+const printError = (message: string) => console.error(formatError(message));
 const printWarning = (message: string) =>
   console.warn(formatMessage("⚠️", chalk.yellow(message)));
 
@@ -137,10 +139,9 @@ program.action(async () => {
     if (error instanceof Error) {
       printWarning(error.message);
     }
-    installation.fail(
-      formatError("Nie udało się zainstalować przeglądarki dla Puppeteer."),
-    );
-    console.log(cardError);
+    installation.fail();
+    printError("Nie udało się zainstalować przeglądarki dla Puppeteer."),
+      console.log(cardError);
     process.exitCode = 1;
     return;
   }
@@ -157,13 +158,16 @@ program.action(async () => {
   } catch (error) {
     if (error instanceof Error) {
       if (KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
-        execution.succeed(formatInfo("Program zamknięty przez użytkownika."));
+        execution.succeed();
+        printInfo("Program zamknięty przez użytkownika.");
         console.log(cardOutro);
         return;
       }
       printWarning(error.message);
+    } else {
+      printWarning(`Nieznany błąd: ${error}`);
     }
-    execution.fail(formatError("Program zakończył się niezerowym kodem wyjścia."));
+    execution.fail();
     console.log(cardError);
     process.exitCode = 1;
   }

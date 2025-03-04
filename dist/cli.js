@@ -203,7 +203,9 @@ program.version(VERSION).description("USOS Survey Filler");
 var formatMessage = (emoji, message) => `
 ${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}`;
 var formatInfo = (message) => formatMessage("\u{1F916}", chalk.cyan(message));
+var printInfo = (message) => console.info(formatInfo(message));
 var formatError = (message) => "\n" + formatMessage("\u274C", chalk.red(message));
+var printError = (message) => console.error(formatError(message));
 var printWarning = (message) => console.warn(formatMessage("\u26A0\uFE0F", chalk.yellow(message)));
 function getPuppeteerPlatform(nodePlatform) {
   switch (nodePlatform) {
@@ -250,10 +252,8 @@ USOS_PASSWORD=${userPassword}`;
     if (error instanceof Error) {
       printWarning(error.message);
     }
-    installation.fail(
-      formatError("Nie uda\u0142o si\u0119 zainstalowa\u0107 przegl\u0105darki dla Puppeteer.")
-    );
-    console.log(cardError);
+    installation.fail();
+    printError("Nie uda\u0142o si\u0119 zainstalowa\u0107 przegl\u0105darki dla Puppeteer."), console.log(cardError);
     process.exitCode = 1;
     return;
   }
@@ -269,13 +269,16 @@ USOS_PASSWORD=${userPassword}`;
   } catch (error) {
     if (error instanceof Error) {
       if (KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
-        execution.succeed(formatInfo("Program zamkni\u0119ty przez u\u017Cytkownika."));
+        execution.succeed();
+        printInfo("Program zamkni\u0119ty przez u\u017Cytkownika.");
         console.log(cardOutro);
         return;
       }
       printWarning(error.message);
+    } else {
+      printWarning(`Nieznany b\u0142\u0105d: ${error}`);
     }
-    execution.fail(formatError("Program zako\u0144czy\u0142 si\u0119 niezerowym kodem wyj\u015Bcia."));
+    execution.fail();
     console.log(cardError);
     process.exitCode = 1;
   }
