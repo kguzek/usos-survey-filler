@@ -59,10 +59,12 @@ export async function installBrowser() {
       browser,
     });
   } catch (error) {
+    installation.fail();
     if (error instanceof Error) {
       printWarning(error.message);
+    } else {
+      printWarning(`Nieznany błąd instalacyjny: ${error}`);
     }
-    installation.fail();
     printError("Nie udało się zainstalować przeglądarki dla Puppeteer."),
       console.log(cardError);
     process.exitCode = 1;

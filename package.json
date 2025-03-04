@@ -1,6 +1,6 @@
 {
   "name": "usos-survey-filler",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "An automatic survey filler for WUST's USOS.",
   "type": "module",
   "scripts": {

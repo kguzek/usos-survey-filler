@@ -70,8 +70,11 @@ export class SurveyFiller {
     await this.page.goto(url, { waitUntil: "networkidle0" });
   }
 
-  private showAlert(message: string) {
+  private showAlert(message: string, optional = false) {
     if (this.headless) {
+      if (!optional) {
+        throw new Error(message);
+      }
       return;
     }
     return this.page.evaluate(
@@ -228,6 +231,7 @@ export class SurveyFiller {
 
     await this.showAlert(
       "Wszystkie ankiety zostały wypełnione.\nDziękuję za korzystanie z aplikacji!\n\n~ kguzek",
+      true,
     );
     await this.browser.close();
   }

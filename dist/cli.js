@@ -126,10 +126,12 @@ async function installBrowser() {
       browser
     });
   } catch (error) {
+    installation.fail();
     if (error instanceof Error) {
       printWarning(error.message);
+    } else {
+      printWarning(`Nieznany b\u0142\u0105d instalacyjny: ${error}`);
     }
-    installation.fail();
     printError("Nie uda\u0142o si\u0119 zainstalowa\u0107 przegl\u0105darki dla Puppeteer."), console.log(cardError);
     process.exitCode = 1;
     return;
@@ -182,8 +184,11 @@ var SurveyFiller = class {
   async navigate(url) {
     await this.page.goto(url, { waitUntil: "networkidle0" });
   }
-  showAlert(message) {
+  showAlert(message, optional = false) {
     if (this.headless) {
+      if (!optional) {
+        throw new Error(message);
+      }
       return;
     }
     return this.page.evaluate(
@@ -317,7 +322,8 @@ var SurveyFiller = class {
       await this.fillSurvey(survey);
     }
     await this.showAlert(
-      "Wszystkie ankiety zosta\u0142y wype\u0142nione.\nDzi\u0119kuj\u0119 za korzystanie z aplikacji!\n\n~ kguzek"
+      "Wszystkie ankiety zosta\u0142y wype\u0142nione.\nDzi\u0119kuj\u0119 za korzystanie z aplikacji!\n\n~ kguzek",
+      true
     );
     await this.browser.close();
   }
