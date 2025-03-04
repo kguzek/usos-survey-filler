@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/*            USOS Survey Filler          */
+/*       Copyright © 2025 Konrad Guzek    */
+
 import { existsSync } from "fs";
 import { Browser, BrowserPlatform, install, resolveBuildId } from "@puppeteer/browsers";
 import ora from "ora";

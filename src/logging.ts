@@ -1,8 +1,12 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/*            USOS Survey Filler          */
+/*       Copyright © 2025 Konrad Guzek    */
+
 import boxen from "boxen";
 import chalk from "chalk";
 
 const REPO_URL = "https://github.com/kguzek/usos-survey-filler";
-export const VERSION = process.env.npm_package_version || "1.4.7";
+export const VERSION = process.env.npm_package_version || "1.4.8";
 
 export const cardIntro = boxen(
   chalk.white(`

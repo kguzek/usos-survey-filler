@@ -30,15 +30,16 @@ const KNOWN_ERROR_MESSAGES = [
 ];
 
 program
-  .version(VERSION)
+  .version(VERSION, "-v, --version", "Wyświetl numer wersji")
   .description("USOS Survey Filler")
+  .helpOption("-h, --help", "Wyświetl dostępne opcje")
   .option(
     "-l, --headless",
     "Uruchom bez interfejsu graficznego (wymaga podania loginu i hasła w CLI)",
   )
   .option(
     "-c, --hardcoded",
-    "Wypełnia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej się zgadzam).",
+    "Wypełnia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej się zgadzam)",
   );
 
 program.action(async () => {

@@ -15,7 +15,7 @@ import ora from "ora";
 import boxen from "boxen";
 import chalk from "chalk";
 var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
-var VERSION = process.env.npm_package_version || "1.4.7";
+var VERSION = process.env.npm_package_version || "1.4.8";
 var cardIntro = boxen(
   chalk.white(`
 Witaj w USOS Survey Filler ${VERSION}!
@@ -342,12 +342,12 @@ var KNOWN_ERROR_MESSAGES = [
   "Navigating frame was detached",
   "Target closed"
 ];
-program.version(VERSION).description("USOS Survey Filler").option(
+program.version(VERSION, "-v, --version", "Wy\u015Bwietl numer wersji").description("USOS Survey Filler").helpOption("-h, --help", "Wy\u015Bwietl dost\u0119pne opcje").option(
   "-l, --headless",
   "Uruchom bez interfejsu graficznego (wymaga podania loginu i has\u0142a w CLI)"
 ).option(
   "-c, --hardcoded",
-  "Wype\u0142nia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej si\u0119 zgadzam)."
+  "Wype\u0142nia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej si\u0119 zgadzam)"
 );
 program.action(async () => {
   config();
