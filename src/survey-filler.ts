@@ -24,14 +24,21 @@ export class SurveyFiller {
   private usosPassword: string;
   private headless: boolean;
   private surveysFilled = 0;
+  private browserPath?: string;
 
-  constructor(username?: string, password?: string, headless = false) {
+  constructor(
+    username?: string,
+    password?: string,
+    headless = false,
+    browserPath?: string,
+  ) {
     this.usosUsername = username || "";
     this.usosPassword = password || "";
     this.headless = headless;
     if (headless && (this.usosUsername === "" || this.usosPassword === "")) {
       throw new Error("Tryb headless wymaga podania loginu i hasła.");
     }
+    this.browserPath = browserPath;
   }
 
   getSurveysFilled() {
@@ -42,6 +49,7 @@ export class SurveyFiller {
     this.browser = await puppeteer.launch({
       headless: this.headless ? undefined : false,
       args: ["--window-size=1600,900", "--window-position=100,100"],
+      executablePath: this.browserPath,
     });
 
     const pages = await this.browser.pages();

@@ -1,12 +1,141 @@
 // src/cli.ts
 import { writeFile } from "fs/promises";
-import { input, password } from "@inquirer/prompts";
-import { Browser, BrowserPlatform, install, resolveBuildId } from "@puppeteer/browsers";
-import boxen from "boxen";
-import chalk from "chalk";
+import { confirm, input, password } from "@inquirer/prompts";
+import chalk2 from "chalk";
 import { program } from "commander";
 import { config } from "dotenv";
+import ora2 from "ora";
+
+// src/browser.ts
+import { existsSync } from "fs";
+import { Browser, BrowserPlatform, install, resolveBuildId } from "@puppeteer/browsers";
 import ora from "ora";
+
+// src/logging.ts
+import boxen from "boxen";
+import chalk from "chalk";
+var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
+var VERSION = process.env.npm_package_version || "1.4.0";
+var cardIntro = boxen(
+  chalk.white(`
+Witaj w USOS Survey Filler ${VERSION}!
+
+Tw\xF3rca: Konrad Guzek
+GitHub: ${chalk.underline("https://github.com/kguzek")}
+Email: konrad@guzek.uk
+`),
+  {
+    padding: 1,
+    margin: 1,
+    borderStyle: "round",
+    borderColor: "cyan",
+    textAlignment: "center"
+  }
+);
+var cardOutro = boxen(
+  chalk.white(`
+Dzi\u0119kuj\u0119 za korzystanie z USOS Survey Filler.
+
+\u2B50 Zostaw mi gwiazdk\u0119 na GitHubie! \u2B50
+  
+${chalk.underline(REPO_URL)}
+`),
+  {
+    padding: 1,
+    margin: 1,
+    borderStyle: "round",
+    borderColor: "yellow",
+    textAlignment: "center"
+  }
+);
+var generateErrorCard = (text) => boxen(chalk.white(text), {
+  padding: 1,
+  margin: 1,
+  borderStyle: "round",
+  borderColor: "red",
+  textAlignment: "center"
+});
+var cardError = generateErrorCard(`
+Wyst\u0105pi\u0142 nieoczekiwany b\u0142\u0105d podczas wykonywania aplikacji.
+Je\u015Bli problem b\u0119dzie si\u0119 powtarza\u0142, zg\u0142o\u015B go na GitHubie:
+
+${chalk.underline(REPO_URL + "/issues/new")}
+`);
+var cardErrorNoHeadless = generateErrorCard(`
+Wyst\u0105pi\u0142 b\u0142\u0105d podczas wykonywania aplikacji.
+Spr\xF3buj uruchomi\u0107 program z flag\u0105 -l/--headless:
+
+npx usos-survey-filler -l
+`);
+var formatMessage = (emoji, message) => `
+${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}`;
+var formatInfo = (message) => formatMessage("\u{1F916}", chalk.cyan(message));
+var formatError = (message) => "\n" + formatMessage("\u274C", chalk.red(message));
+var printInfo = (message) => console.info(formatInfo(message));
+var printError = (message) => console.error(formatError(message));
+var printWarning = (message) => console.warn(formatMessage("\u26A0\uFE0F", chalk.yellow(message)));
+
+// src/browser.ts
+var pathsByOS = {
+  win32: [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+    "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe"
+  ],
+  darwin: [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Firefox.app/Contents/MacOS/firefox"
+  ],
+  linux: [
+    "/usr/bin/google-chrome",
+    "/usr/bin/firefox",
+    "/usr/local/bin/google-chrome",
+    "/usr/local/bin/firefox"
+  ]
+};
+function detectUserBrowser() {
+  const paths = pathsByOS[process.platform] ?? [];
+  return paths.find((path) => existsSync(path));
+}
+function getPuppeteerPlatform(nodePlatform) {
+  switch (nodePlatform) {
+    case "win32":
+      return BrowserPlatform.WIN64;
+    case "darwin":
+      return BrowserPlatform.MAC;
+    case "linux":
+      return BrowserPlatform.LINUX;
+    default:
+      throw new Error(`Unsupported platform: ${nodePlatform}`);
+  }
+}
+async function installBrowser() {
+  const installation = ora({
+    prefixText: formatInfo("Trwa instalacja tymczasowej wersji Chrome...")
+  }).start();
+  try {
+    const cacheDir = "./.puppeteer-cache";
+    const platform = getPuppeteerPlatform(process.platform);
+    const browser = Browser.CHROME;
+    const buildId = await resolveBuildId(browser, platform, "latest");
+    await install({
+      cacheDir,
+      platform,
+      buildId,
+      browser
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      printWarning(error.message);
+    }
+    installation.fail();
+    printError("Nie uda\u0142o si\u0119 zainstalowa\u0107 przegl\u0105darki dla Puppeteer."), console.log(cardError);
+    process.exitCode = 1;
+    return;
+  }
+  installation.succeed();
+}
 
 // src/survey-filler.ts
 import puppeteer from "puppeteer";
@@ -21,13 +150,15 @@ var SurveyFiller = class {
   usosPassword;
   headless;
   surveysFilled = 0;
-  constructor(username, password2, headless = false) {
+  browserPath;
+  constructor(username, password2, headless = false, browserPath) {
     this.usosUsername = username || "";
     this.usosPassword = password2 || "";
     this.headless = headless;
     if (headless && (this.usosUsername === "" || this.usosPassword === "")) {
       throw new Error("Tryb headless wymaga podania loginu i has\u0142a.");
     }
+    this.browserPath = browserPath;
   }
   getSurveysFilled() {
     return this.surveysFilled;
@@ -35,7 +166,8 @@ var SurveyFiller = class {
   async init() {
     this.browser = await puppeteer.launch({
       headless: this.headless ? void 0 : false,
-      args: ["--window-size=1600,900", "--window-position=100,100"]
+      args: ["--window-size=1600,900", "--window-position=100,100"],
+      executablePath: this.browserPath
     });
     const pages = await this.browser.pages();
     await pages[0].close();
@@ -158,87 +290,15 @@ var SurveyFiller = class {
 };
 
 // src/cli.ts
-var VERSION = process.env.npm_package_version || "1.3.5";
-var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
 var KNOWN_ERROR_MESSAGES = [
   "Most likely the page has been closed",
   "Navigating frame was detached",
   "Target closed"
 ];
-var cardIntro = boxen(
-  chalk.white(`
-Witaj w USOS Survey Filler ${VERSION}!
-
-Tw\xF3rca: Konrad Guzek
-GitHub: ${chalk.underline("https://github.com/kguzek")}
-Email: konrad@guzek.uk
-`),
-  {
-    padding: 1,
-    margin: 1,
-    borderStyle: "round",
-    borderColor: "cyan",
-    textAlignment: "center"
-  }
-);
-var cardOutro = boxen(
-  chalk.white(`
-Dzi\u0119kuj\u0119 za korzystanie z USOS Survey Filler.
-
-\u2B50 Zostaw mi gwiazdk\u0119 na GitHubie! \u2B50
-  
-${chalk.underline(REPO_URL)}
-`),
-  {
-    padding: 1,
-    margin: 1,
-    borderStyle: "round",
-    borderColor: "yellow",
-    textAlignment: "center"
-  }
-);
-var generateErrorCard = (text) => boxen(chalk.white(text), {
-  padding: 1,
-  margin: 1,
-  borderStyle: "round",
-  borderColor: "red",
-  textAlignment: "center"
-});
-var cardError = generateErrorCard(`
-Wyst\u0105pi\u0142 nieoczekiwany b\u0142\u0105d podczas wykonywania aplikacji.
-Je\u015Bli problem b\u0119dzie si\u0119 powtarza\u0142, zg\u0142o\u015B go na GitHubie:
-
-${chalk.underline(REPO_URL + "/issues/new")}
-`);
-var cardErrorNoHeadless = generateErrorCard(`
-Wyst\u0105pi\u0142 b\u0142\u0105d podczas wykonywania aplikacji.
-Spr\xF3buj uruchomi\u0107 program z flag\u0105 -l/--headless:
-
-npx usos-survey-filler -l
-`);
 program.version(VERSION).description("USOS Survey Filler").option(
   "-l, --headless",
   "Uruchom bez interfejsu graficznego (wymaga podania loginu i has\u0142a w CLI)"
 );
-var formatMessage = (emoji, message) => `
-${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}`;
-var formatInfo = (message) => formatMessage("\u{1F916}", chalk.cyan(message));
-var printInfo = (message) => console.info(formatInfo(message));
-var formatError = (message) => "\n" + formatMessage("\u274C", chalk.red(message));
-var printError = (message) => console.error(formatError(message));
-var printWarning = (message) => console.warn(formatMessage("\u26A0\uFE0F", chalk.yellow(message)));
-function getPuppeteerPlatform(nodePlatform) {
-  switch (nodePlatform) {
-    case "win32":
-      return BrowserPlatform.WIN64;
-    case "darwin":
-      return BrowserPlatform.MAC;
-    case "linux":
-      return BrowserPlatform.LINUX;
-    default:
-      throw new Error(`Unsupported platform: ${nodePlatform}`);
-  }
-}
 program.action(async () => {
   config();
   console.log(cardIntro);
@@ -256,35 +316,33 @@ program.action(async () => {
 USOS_PASSWORD=${userPassword}`;
     await writeFile(".env", envContent);
   }
-  const installation = ora({
-    prefixText: formatInfo("Trwa instalacja programu...")
-  }).start();
-  try {
-    const cacheDir = "./.puppeteer-cache";
-    const platform = getPuppeteerPlatform(process.platform);
-    const browser = Browser.CHROME;
-    const buildId = await resolveBuildId(browser, platform, "latest");
-    await install({
-      cacheDir,
-      platform,
-      buildId,
-      browser
+  let browserPath = detectUserBrowser();
+  if (browserPath == null) {
+    printInfo(
+      "Nie wykryto \u015Bciezki instalacyjnej przegl\u0105darki. My\u015Blisz, \u017Ce to w b\u0142\u0119dzie? Zg\u0142o\u015B na GitHubie!"
+    );
+  } else {
+    const useDetectedPath = await confirm({
+      message: `U\u017Cy\u0107 wykrytej zainstalowanej przegl\u0105darki: ${chalk2.underline(browserPath)}${chalk2.reset("?")}`,
+      transformer: (input2) => input2 ? chalk2.green("Tak") : chalk2.red("Nie")
     });
-  } catch (error) {
-    if (error instanceof Error) {
-      printWarning(error.message);
+    if (!useDetectedPath) {
+      browserPath = void 0;
     }
-    installation.fail();
-    printError("Nie uda\u0142o si\u0119 zainstalowa\u0107 przegl\u0105darki dla Puppeteer."), console.log(cardError);
-    process.exitCode = 1;
-    return;
   }
-  installation.succeed();
-  const execution = ora({
+  if (browserPath == null) {
+    await installBrowser();
+  }
+  const execution = ora2({
     prefixText: formatInfo("Instalacja uko\u0144czona. Uruchamianie programu...")
   }).start();
   try {
-    const surveyFiller = new SurveyFiller(username, userPassword, options.headless);
+    const surveyFiller = new SurveyFiller(
+      username,
+      userPassword,
+      options.headless,
+      browserPath
+    );
     await surveyFiller.start();
     execution.succeed();
     printInfo(`Wype\u0142nionych ankiet: ${surveyFiller.getSurveysFilled()}`);
