@@ -1,6 +1,6 @@
 # USOS Survey Filler
 
-[<img height="12" src="https://flagcdn.com/w80/pl.png" /> Wersja polska](https://github.com/kguzek/usos-survey-filler/blob/main/README-pl.md)
+<img height="12" src="https://flagcdn.com/w80/pl.png" alt="PL" /> [Wersja polska](https://github.com/kguzek/usos-survey-filler/blob/main/README-pl.md)
 
 This is an automation tool written using Puppeteer to automatically fill out student surveys on WUST's University Study-Oriented System platform.
 
@@ -24,7 +24,7 @@ You can skip the credential prompts by specifying the `USOS_USERNAME` and `USOS_
 
 ## That's all
 
-If you found this project useful, leave a star! ⭐
+If you found this project useful, [leave a star](https://github.com/kguzek/usos-survey-filler)! ⭐
 
 If you have any suggestions or bug reports please [open an issue](https://github.com/kguzek/usos-survey-filler/issues/new).
 
@@ -36,4 +36,4 @@ USOS Survey Filler
 
 Copyright © 2025 Konrad Guzek
 
-The application is not supported by USOS, the University Centre for Informatization, or the Wrocław University of Science and Technology. All rights, except those for the source code of this program, belong to their respective entities.
+The application is neither supported nor endorsed by USOS, the University Centre for Informatization, or the Wrocław University of Science and Technology. All rights, except those for the source code of this program, belong to their respective entities.

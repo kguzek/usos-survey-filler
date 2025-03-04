@@ -1,6 +1,6 @@
 # USOS Survey Filler
 
-[<img height="12" src="https://flagcdn.com/w80/gb.png" /> English version](https://github.com/kguzek/usos-survey-filler/blob/main/README.md)
+<img height="12" src="https://flagcdn.com/w80/gb.png" alt="EN" /> [English version](https://github.com/kguzek/usos-survey-filler#usos-survey-filler)
 
 USOS Survery Filler to narzędzie napisane przy użyciu biblioteki Puppeteer do automatycznego wypełniania ankiet o prowadzących na platformie Uniwersysteckiego Systemu Obsługi Studiów Politechniki Wrocławskiej.
 
@@ -24,7 +24,7 @@ Możesz pominąć prośby o dane logowania, określając zmienne środowiskowe `
 
 ## To wszystko
 
-Jeśli ten projekt się Tobie przydał, dodaj gwiazdkę! ⭐
+Jeśli ten projekt się Tobie przydał, [dodaj gwiazdkę](https://github.com/kguzek/usos-survey-filler)! ⭐
 
 Jeśli masz sugestie lub chcesz zgłosić błąd, [stwórz *issue*](https://github.com/kguzek/usos-survey-filler/issues/new).
 
