@@ -10,17 +10,17 @@ import chalk from "chalk";
 import { program } from "commander";
 import { config } from "dotenv";
 
-import packageJson from "../package.json";
+const VERSION = process.env.npm_package_version || "1.2.0";
 
-const VERSION = packageJson.version;
+const REPO_URL = "https://github.com/kguzek/usos-survey-filler";
 
 const cardIntro = boxen(
   chalk.white(`
-  Witaj w USOS Survey Filler ${VERSION}!
-  
-  Twórca: Konrad Guzek
-  GitHub: https://github.com/kguzek
-  Email: konrad@guzek.uk
+Witaj w USOS Survey Filler ${VERSION}!
+
+Twórca: Konrad Guzek
+GitHub: ${chalk.underline("https://github.com/kguzek")}
+Email: konrad@guzek.uk
 `),
   {
     padding: 1,
@@ -33,11 +33,11 @@ const cardIntro = boxen(
 
 const cardOutro = boxen(
   chalk.white(`
-    Dziękuję za korzystanie z USOS Survey Filler.
+Dziękuję za korzystanie z USOS Survey Filler.
 
-  ⭐ Zostaw mi gwiazdkę na GitHubie! ⭐
+⭐ Zostaw mi gwiazdkę na GitHubie! ⭐
   
-  https://github.com/kguzek/usos-survey-filler
+${chalk.underline(REPO_URL)}
 `),
   {
     padding: 1,
@@ -48,12 +48,30 @@ const cardOutro = boxen(
   },
 );
 
+const cardError = boxen(
+  chalk.white(`
+Wystąpił nieoczekiwany błąd podczas wykonywania aplikacji.
+Jeśli problem będzie się powtarzał, zgłoś go na GitHubie:
+
+${chalk.underline(REPO_URL + "/issues/new")}
+`),
+  {
+    padding: 1,
+    margin: 1,
+    borderStyle: "round",
+    borderColor: "red",
+    textAlignment: "center",
+  },
+);
+
 program.version(VERSION).description("USOS Survey Filler");
 
-const print = (message: string) =>
+const printRaw = (emoji: string, message: string) =>
   console.log(
-    `\n${chalk.dim("[")}${chalk.bgCyan.white("USOS Survey Filler")}${chalk.reset.dim("]")} ${chalk.cyan(message)}\n`,
+    `\n${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}\n`,
   );
+const printInfo = (message: string) => printRaw("ℹ", chalk.cyan(message));
+const printError = (message: string) => printRaw("❌", chalk.red(message));
 
 program.action(async () => {
   config();
@@ -80,12 +98,16 @@ program.action(async () => {
 
   config();
 
-  print("Trwa instalacja programu...");
-  execSync("npm install", { stdio: "inherit" });
+  printInfo("Trwa instalacja programu...");
   execSync("npx puppeteer browser install chrome", { stdio: "inherit" });
-  print("Instalacja ukończona. Uruchamianie programu...");
-  execSync("npm run start", { stdio: "inherit" });
-  console.log(cardOutro);
+  printInfo("Instalacja ukończona. Uruchamianie programu...");
+  try {
+    execSync("npm run start", { stdio: "inherit" });
+    console.log(cardOutro);
+  } catch {
+    printError("Program zakończył się niezerowym kodem wyjścia.");
+    console.log(cardError);
+  }
 });
 
 program.parse(process.argv);

@@ -6,48 +6,15 @@ import boxen from "boxen";
 import chalk from "chalk";
 import { program } from "commander";
 import { config } from "dotenv";
-
-// package.json
-var package_default = {
-  name: "usos-survey-filler",
-  version: "1.1.0",
-  description: "An automatic survey filler for WUST's USOS.",
-  type: "module",
-  scripts: {
-    build: "tsup",
-    start: "node dist/index.js"
-  },
-  bin: "./bin/index.js",
-  files: [
-    "dist"
-  ],
-  keywords: [],
-  author: "Konrad Guzek",
-  license: "AGPL-3.0-only",
-  dependencies: {
-    "@inquirer/prompts": "^7.3.2",
-    boxen: "^8.0.1",
-    chalk: "^5.4.1",
-    commander: "^13.1.0",
-    dotenv: "^16.4.7",
-    puppeteer: "^24.3.0"
-  },
-  devDependencies: {
-    "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
-    tsup: "^8.4.0",
-    typescript: "^5.8.2"
-  }
-};
-
-// src/cli.ts
-var VERSION = package_default.version;
+var VERSION = process.env.npm_package_version || "1.2.0";
+var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
 var cardIntro = boxen(
   chalk.white(`
-  Witaj w USOS Survey Filler ${VERSION}!
-  
-  Tw\xF3rca: Konrad Guzek
-  GitHub: https://github.com/kguzek
-  Email: konrad@guzek.uk
+Witaj w USOS Survey Filler ${VERSION}!
+
+Tw\xF3rca: Konrad Guzek
+GitHub: ${chalk.underline("https://github.com/kguzek")}
+Email: konrad@guzek.uk
 `),
   {
     padding: 1,
@@ -59,11 +26,11 @@ var cardIntro = boxen(
 );
 var cardOutro = boxen(
   chalk.white(`
-    Dzi\u0119kuj\u0119 za korzystanie z USOS Survey Filler.
+Dzi\u0119kuj\u0119 za korzystanie z USOS Survey Filler.
 
-  \u2B50 Zostaw mi gwiazdk\u0119 na GitHubie! \u2B50
+\u2B50 Zostaw mi gwiazdk\u0119 na GitHubie! \u2B50
   
-  https://github.com/kguzek/usos-survey-filler
+${chalk.underline(REPO_URL)}
 `),
   {
     padding: 1,
@@ -73,12 +40,29 @@ var cardOutro = boxen(
     textAlignment: "center"
   }
 );
+var cardError = boxen(
+  chalk.white(`
+Wyst\u0105pi\u0142 nieoczekiwany b\u0142\u0105d podczas wykonywania aplikacji.
+Je\u015Bli problem b\u0119dzie si\u0119 powtarza\u0142, zg\u0142o\u015B go na GitHubie:
+
+${chalk.underline(REPO_URL + "/issues/new")}
+`),
+  {
+    padding: 1,
+    margin: 1,
+    borderStyle: "round",
+    borderColor: "red",
+    textAlignment: "center"
+  }
+);
 program.version(VERSION).description("USOS Survey Filler");
-var print = (message) => console.log(
+var printRaw = (emoji, message) => console.log(
   `
-${chalk.dim("[")}${chalk.bgCyan.white("USOS Survey Filler")}${chalk.reset.dim("]")} ${chalk.cyan(message)}
+${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}
 `
 );
+var printInfo = (message) => printRaw("\u2139", chalk.cyan(message));
+var printError = (message) => printRaw("\u274C", chalk.red(message));
 program.action(async () => {
   config();
   console.log(cardIntro);
@@ -94,12 +78,16 @@ USOS_PASSWORD=${password}`;
     await writeFile(".env", envContent);
   }
   config();
-  print("Trwa instalacja programu...");
-  execSync("npm install", { stdio: "inherit" });
+  printInfo("Trwa instalacja programu...");
   execSync("npx puppeteer browser install chrome", { stdio: "inherit" });
-  print("Instalacja uko\u0144czona. Uruchamianie programu...");
-  execSync("npm run start", { stdio: "inherit" });
-  console.log(cardOutro);
+  printInfo("Instalacja uko\u0144czona. Uruchamianie programu...");
+  try {
+    execSync("npm run start", { stdio: "inherit" });
+    console.log(cardOutro);
+  } catch {
+    printError("Program zako\u0144czy\u0142 si\u0119 niezerowym kodem wyj\u015Bcia.");
+    console.log(cardError);
+  }
 });
 program.parse(process.argv);
 //# sourceMappingURL=cli.js.map

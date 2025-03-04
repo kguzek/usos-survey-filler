@@ -78,14 +78,14 @@ var init_survey_filler = __esm({
         const passwordEmpty = USOS_PASSWORD === "";
         await this.page.waitForSelector("#username");
         if (!usernameEmpty) {
-          await this.page.type("#username", USOS_USERNAME, { delay: 100 });
+          await this.page.type("#username", USOS_USERNAME, { delay: 20 });
         }
         if (passwordEmpty) {
           if (!usernameEmpty) {
             await this.page.focus("#password");
           }
         } else {
-          await this.page.type("#password", USOS_PASSWORD, { delay: 100 });
+          await this.page.type("#password", USOS_PASSWORD, { delay: 20 });
         }
         if (usernameEmpty || passwordEmpty) {
           await this.manualLogin("Prosz\u0119 si\u0119 zalogowa\u0107 manualnie.");
@@ -160,12 +160,29 @@ var init_survey_filler = __esm({
 
 // src/index.ts
 init_esm_shims();
+import chalk from "chalk";
 import { config } from "dotenv";
 config();
 async function main() {
   const surveyFillerModule = await Promise.resolve().then(() => (init_survey_filler(), survey_filler_exports));
   const surveyFiller = new surveyFillerModule.SurveyFiller();
-  surveyFiller.start();
+  try {
+    await surveyFiller.start();
+  } catch (error) {
+    if (!(error instanceof Error)) {
+      throw error;
+    }
+    if ([
+      "Most likely the page has been closed",
+      "Navigating frame was detached",
+      "(Input.dispatchKeyEvent): Target closed"
+    ].find((msg) => error.message.includes(msg))) {
+      return;
+    } else {
+      console.warn(chalk.yellow(error.message));
+    }
+    process.exitCode = 1;
+  }
 }
 main();
 //# sourceMappingURL=index.js.map
