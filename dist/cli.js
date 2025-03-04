@@ -15,7 +15,7 @@ import ora from "ora";
 import boxen from "boxen";
 import chalk from "chalk";
 var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
-var VERSION = process.env.npm_package_version || "1.4.0";
+var VERSION = process.env.npm_package_version || "1.4.1";
 var cardIntro = boxen(
   chalk.white(`
 Witaj w USOS Survey Filler ${VERSION}!
@@ -151,7 +151,8 @@ var SurveyFiller = class {
   headless;
   surveysFilled = 0;
   browserPath;
-  constructor(username, password2, headless = false, browserPath) {
+  randomAnswers;
+  constructor(username, password2, headless = false, browserPath, randomAnswers = false) {
     this.usosUsername = username || "";
     this.usosPassword = password2 || "";
     this.headless = headless;
@@ -159,6 +160,7 @@ var SurveyFiller = class {
       throw new Error("Tryb headless wymaga podania loginu i has\u0142a.");
     }
     this.browserPath = browserPath;
+    this.randomAnswers = randomAnswers;
   }
   getSurveysFilled() {
     return this.surveysFilled;
@@ -246,15 +248,47 @@ var SurveyFiller = class {
     console.info("Filling out survey for", survey.name);
     await this.navigate(survey.link);
     await this.page.$$eval("label", (labels) => {
+      const percentageAnswers = [
+        "0-33 %",
+        "34-67 %",
+        "34-67 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %"
+      ];
+      const yesNoAnswers = ["nie", "tak", "tak", "tak", "tak", "tak", "tak"];
+      const subjectiveAnswers = [
+        "zdecydowanie si\u0119 nie zgadzam",
+        "raczej si\u0119 nie zgadzam",
+        "zdecydowanie si\u0119 zgadzam",
+        "zdecydowanie si\u0119 zgadzam",
+        "nie mam zdania",
+        "nie mam zdania",
+        "nie mam zdania",
+        "raczej si\u0119 zgadzam",
+        "raczej si\u0119 zgadzam",
+        "raczej si\u0119 zgadzam",
+        "raczej si\u0119 zgadzam",
+        "raczej si\u0119 zgadzam",
+        "raczej si\u0119 zgadzam",
+        "raczej si\u0119 zgadzam",
+        "raczej si\u0119 zgadzam"
+      ];
+      const getRandomItem = (array) => this.randomAnswers ? array[Math.floor(Math.random() * array.length)] : array.at(-1);
       labels.forEach((label) => {
         const textContent = label.textContent?.trim().replace(/\s+/g, " ") ?? null;
         if (textContent == null) {
           return;
         }
         const SECTION_ANSWERS = [
-          "68-100 %",
-          "tak",
-          "raczej si\u0119 zgadzam"
+          getRandomItem(percentageAnswers),
+          getRandomItem(yesNoAnswers),
+          getRandomItem(subjectiveAnswers)
         ];
         if (SECTION_ANSWERS.includes(textContent)) {
           label.click();
@@ -298,6 +332,9 @@ var KNOWN_ERROR_MESSAGES = [
 program.version(VERSION).description("USOS Survey Filler").option(
   "-l, --headless",
   "Uruchom bez interfejsu graficznego (wymaga podania loginu i has\u0142a w CLI)"
+).option(
+  "-c, --hardcoded",
+  "Wype\u0142nia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej\xA0si\u0119 zgadzam)."
 );
 program.action(async () => {
   config();
@@ -341,7 +378,8 @@ USOS_PASSWORD=${userPassword}`;
       username,
       userPassword,
       options.headless,
-      browserPath
+      browserPath,
+      !options.hardcoded
     );
     await surveyFiller.start();
     execution.succeed();

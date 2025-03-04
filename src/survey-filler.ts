@@ -25,12 +25,14 @@ export class SurveyFiller {
   private headless: boolean;
   private surveysFilled = 0;
   private browserPath?: string;
+  private randomAnswers: boolean;
 
   constructor(
     username?: string,
     password?: string,
     headless = false,
     browserPath?: string,
+    randomAnswers = false,
   ) {
     this.usosUsername = username || "";
     this.usosPassword = password || "";
@@ -39,6 +41,7 @@ export class SurveyFiller {
       throw new Error("Tryb headless wymaga podania loginu i hasła.");
     }
     this.browserPath = browserPath;
+    this.randomAnswers = randomAnswers;
   }
 
   getSurveysFilled() {
@@ -146,6 +149,42 @@ export class SurveyFiller {
     // $("label:textEquals('tak')").each((_, l) => l.click());
     // $("label:textEquals('raczej się zgadzam')").each((_, l) => l.click());
     await this.page.$$eval("label", (labels) => {
+      const percentageAnswers = [
+        "0-33 %",
+        "34-67 %",
+        "34-67 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+        "68-100 %",
+      ];
+      const yesNoAnswers = ["nie", "tak", "tak", "tak", "tak", "tak", "tak"];
+      const subjectiveAnswers = [
+        "zdecydowanie się nie zgadzam",
+        "raczej się nie zgadzam",
+        "zdecydowanie się zgadzam",
+        "zdecydowanie się zgadzam",
+        "nie mam zdania",
+        "nie mam zdania",
+        "nie mam zdania",
+        "raczej się zgadzam",
+        "raczej się zgadzam",
+        "raczej się zgadzam",
+        "raczej się zgadzam",
+        "raczej się zgadzam",
+        "raczej się zgadzam",
+        "raczej się zgadzam",
+        "raczej się zgadzam",
+      ];
+      const getRandomItem = <T>(array: T[]) =>
+        this.randomAnswers
+          ? array[Math.floor(Math.random() * array.length)]
+          : array.at(-1);
+
       labels.forEach((label) => {
         const textContent = label.textContent?.trim().replace(/\s+/g, " ") ?? null;
         if (textContent == null) {
@@ -153,9 +192,9 @@ export class SurveyFiller {
         }
 
         const SECTION_ANSWERS = [
-          "68-100 %" /** Question 1.1 */,
-          "tak" /** Questions 2.1-2.4 */,
-          "raczej się zgadzam" /** Questions 3.1-3.6 */,
+          getRandomItem(percentageAnswers) /** Question 1.1 */,
+          getRandomItem(yesNoAnswers) /** Questions 2.1-2.4 */,
+          getRandomItem(subjectiveAnswers) /** Questions 3.1-3.6 */,
         ];
 
         if (SECTION_ANSWERS.includes(textContent)) {

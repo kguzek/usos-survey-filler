@@ -35,6 +35,10 @@ program
   .option(
     "-l, --headless",
     "Uruchom bez interfejsu graficznego (wymaga podania loginu i hasła w CLI)",
+  )
+  .option(
+    "-c, --hardcoded",
+    "Wypełnia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej się zgadzam).",
   );
 
 program.action(async () => {
@@ -92,6 +96,7 @@ program.action(async () => {
       userPassword,
       options.headless,
       browserPath,
+      !options.hardcoded,
     );
     await surveyFiller.start();
     execution.succeed();
