@@ -1,6 +1,6 @@
 {
   "name": "usos-survey-filler",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "An automatic survey filler for WUST's USOS.",
   "type": "module",
   "scripts": {
@@ -13,9 +13,26 @@
   "files": [
     "dist"
   ],
-  "keywords": [],
+  "keywords": [
+    "USOS",
+    "PWr",
+    "Wrocław",
+    "Politechnika",
+    "survey",
+    "filler",
+    "automatic",
+    "automation"
+  ],
   "author": "Konrad Guzek",
   "license": "AGPL-3.0-only",
+  "homepage": "https://github.com/kguzek/usos-survey-filler",
+  "bugs": {
+    "url": "https://github.com/kguzek/usos-survey-filler/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kguzek/usos-survey-filler.git"
+  },
   "dependencies": {
     "@inquirer/prompts": "^7.3.2",
     "boxen": "^8.0.1",

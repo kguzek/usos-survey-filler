@@ -38,7 +38,7 @@ program
   )
   .option(
     "-c, --hardcoded",
-    "Wypełnia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej się zgadzam).",
+    "Wypełnia ankiety tymi samymi odpowiedziami (68-100%; tak; raczej się zgadzam).",
   );
 
 program.action(async () => {
