@@ -5,9 +5,6 @@
 import type { Browser, Page } from "puppeteer";
 import puppeteer from "puppeteer";
 
-const USOS_USERNAME = process.env.USOS_USERNAME || "";
-const USOS_PASSWORD = process.env.USOS_PASSWORD || "";
-
 const USOS_HOME_URL = "https://web.usos.pwr.edu.pl/kontroler.php?_action=home/index";
 const USOS_LOGIN_URL =
   "https://login.pwr.edu.pl/auth/realms/pwr.edu.pl/protocol/cas/login?service=https%3A%2F%2Fweb.usos.pwr.edu.pl%2Fkontroler.php%3F_action%3Dlogowaniecas%2Findex";
@@ -23,6 +20,14 @@ export class SurveyFiller {
   private page!: Page;
   private browser!: Browser;
   private surveys: SurveyInfo[] = [];
+
+  private usosUsername: string;
+  private usosPassword: string;
+
+  constructor(username?: string, password?: string) {
+    this.usosUsername = username || "";
+    this.usosPassword = password || "";
+  }
 
   private async init() {
     this.browser = await puppeteer.launch({
@@ -71,18 +76,18 @@ export class SurveyFiller {
 
   private async loginToUsos() {
     await this.navigate(USOS_LOGIN_URL);
-    const usernameEmpty = USOS_USERNAME === "";
-    const passwordEmpty = USOS_PASSWORD === "";
+    const usernameEmpty = this.usosUsername === "";
+    const passwordEmpty = this.usosPassword === "";
     await this.page.waitForSelector("#username");
     if (!usernameEmpty) {
-      await this.page.type("#username", USOS_USERNAME, { delay: 20 });
+      await this.page.type("#username", this.usosUsername, { delay: 40 });
     }
     if (passwordEmpty) {
       if (!usernameEmpty) {
         await this.page.focus("#password");
       }
     } else {
-      await this.page.type("#password", USOS_PASSWORD, { delay: 20 });
+      await this.page.type("#password", this.usosPassword, { delay: 40 });
     }
 
     if (usernameEmpty || passwordEmpty) {

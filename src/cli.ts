@@ -4,15 +4,21 @@
 
 import { execSync } from "child_process";
 import { writeFile } from "fs/promises";
-import { input } from "@inquirer/prompts";
+import { input, password } from "@inquirer/prompts";
 import boxen from "boxen";
 import chalk from "chalk";
 import { program } from "commander";
 import { config } from "dotenv";
 
-const VERSION = process.env.npm_package_version || "1.2.0";
+import { SurveyFiller } from "./survey-filler";
 
+const VERSION = process.env.npm_package_version || "1.2.0";
 const REPO_URL = "https://github.com/kguzek/usos-survey-filler";
+const KNOWN_ERROR_MESSAGES = [
+  "Most likely the page has been closed",
+  "Navigating frame was detached",
+  "Target closed",
+];
 
 const cardIntro = boxen(
   chalk.white(`
@@ -70,8 +76,9 @@ const printRaw = (emoji: string, message: string) =>
   console.log(
     `\n${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}\n`,
   );
-const printInfo = (message: string) => printRaw("ℹ", chalk.cyan(message));
+const printInfo = (message: string) => printRaw("🤖", chalk.cyan(message));
 const printError = (message: string) => printRaw("❌", chalk.red(message));
+const printWarning = (message: string) => printRaw("⚠️", chalk.yellow(message));
 
 program.action(async () => {
   config();
@@ -84,29 +91,37 @@ program.action(async () => {
       message: "👤 Nazwa użytkownika do USOSa (opcjonalne):",
     }));
 
-  const password =
+  const userPassword =
     process.env.USOS_PASSWORD ||
-    (await input({
+    (await password({
       message: "🔑 Hasło do USOSa (opcjonalne):",
+      mask: "*",
     }));
 
-  if (password !== "" || username !== "") {
+  if (userPassword !== "" || username !== "") {
     // Create a .env file with the provided values
-    const envContent = `USOS_USERNAME=${username}\nUSOS_PASSWORD=${password}`;
+    const envContent = `USOS_USERNAME=${username}\nUSOS_PASSWORD=${userPassword}`;
     await writeFile(".env", envContent);
   }
-
-  config();
 
   printInfo("Trwa instalacja programu...");
   execSync("npx puppeteer browser install chrome", { stdio: "inherit" });
   printInfo("Instalacja ukończona. Uruchamianie programu...");
   try {
-    execSync("npm run start", { stdio: "inherit" });
+    const surveyFiller = new SurveyFiller(username, userPassword);
+    await surveyFiller.start();
     console.log(cardOutro);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error) {
+      if (KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
+        console.log(cardOutro);
+        return;
+      }
+      printWarning(chalk.yellow(error.message));
+    }
     printError("Program zakończył się niezerowym kodem wyjścia.");
     console.log(cardError);
+    process.exitCode = 1;
   }
 });
 
