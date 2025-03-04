@@ -56,8 +56,12 @@ export class SurveyFiller {
     });
 
     const pages = await this.browser.pages();
-    await pages[0].close();
-    this.page = await this.browser.newPage();
+    if (pages.length > 0) {
+      this.page = pages[0];
+    } else {
+      await pages[0].close();
+      this.page = await this.browser.newPage();
+    }
     this.page.setViewport({ width: 1600, height: 900 });
   }
 
@@ -73,6 +77,8 @@ export class SurveyFiller {
   private showAlert(message: string, optional = false) {
     if (this.headless) {
       if (!optional) {
+        console.debug("Aktalna strona:", this.page.url());
+        this.browser.close();
         throw new Error(message);
       }
       return;
@@ -95,8 +101,8 @@ export class SurveyFiller {
     await this.wait();
     if (this.page.url() !== USOS_HOME_URL) {
       await this.manualLogin(
-        "Niepoprawne dane loginowe. Proszę zalogować się manualnie.",
-      );
+          "Niepoprawne dane loginowe. Proszę zalogować się manualnie.",
+        );
     }
   }
 

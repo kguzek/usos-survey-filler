@@ -15,7 +15,7 @@ import ora from "ora";
 import boxen from "boxen";
 import chalk from "chalk";
 var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
-var VERSION = process.env.npm_package_version || "1.4.4";
+var VERSION = process.env.npm_package_version || "1.4.5";
 var cardIntro = boxen(
   chalk.white(`
 Witaj w USOS Survey Filler ${VERSION}!
@@ -174,8 +174,12 @@ var SurveyFiller = class {
       executablePath: this.browserPath
     });
     const pages = await this.browser.pages();
-    await pages[0].close();
-    this.page = await this.browser.newPage();
+    if (pages.length > 0) {
+      this.page = pages[0];
+    } else {
+      await pages[0].close();
+      this.page = await this.browser.newPage();
+    }
     this.page.setViewport({ width: 1600, height: 900 });
   }
   async wait() {
@@ -187,6 +191,8 @@ var SurveyFiller = class {
   showAlert(message, optional = false) {
     if (this.headless) {
       if (!optional) {
+        console.debug("Aktalna strona:", this.page.url());
+        this.browser.close();
         throw new Error(message);
       }
       return;
