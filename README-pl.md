@@ -1,6 +1,6 @@
 # USOS Survey Filler
 
-<img height="12" src="https://flagcdn.com/w80/gb.png" alt="EN" /> [English version](https://github.com/kguzek/usos-survey-filler#usos-survey-filler)
+<img height="12" src="https://flagcdn.com/w80/gb.png" alt="EN" /> [English version](https://github.com/kguzek/usos-survey-filler#usos-survey-filler#readme)
 
 USOS Survery Filler to narzędzie napisane przy użyciu biblioteki Puppeteer do automatycznego wypełniania ankiet o prowadzących na platformie Uniwersysteckiego Systemu Obsługi Studiów Politechniki Wrocławskiej.
 
@@ -8,7 +8,7 @@ Możliwe, że również działa dla innych polskich uczelni korzystających z US
 
 ## Jak skorzystać?
 
-Zainstaluj Node.js i uruchom następujące polecenie:
+[Zainstaluj Node.js](https://nodejs.org/pl/) i uruchom następujące polecenie:
 
 ```bash
 npx usos-survey-filler
@@ -22,11 +22,22 @@ Jeśli podasz dane logowania, zostaną one zapisane na Twoim komputerze w pliku 
 
 Możesz pominąć prośby o dane logowania, określając zmienne środowiskowe `USOS_USERNAME` i `USOS_PASSWORD`.
 
+## FAQ
+
+1. 🥶 Przeglądarka sie nie uruchamia! (zwykle na systemach GNU/Linux)
+   - Spróbuj użyć trybu headless (--headless lub -l)
+
+2. 😕 Pokazuje, że wypełniono 0 ankiet...
+   - Spróbuj nie używać wykrytej przeglądarki (wpisz N jak się zapyta)
+
+3. ❓ Jakimi odpowiedziami wypełnia ankiety?
+   - Program losuje odpowiedzi z ustalonymi wagami, tak, że preferuje w kolejności lekko pozytywne odpowiedzi, potem neutralne, potem bardzo pozytywne i na koniec negatywne. Najwięcej odpowiedzi będzie stosunkowo pozytywnych (typu "raczej się zgadzam").
+
 ## To wszystko
 
 Jeśli ten projekt się Tobie przydał, [dodaj gwiazdkę](https://github.com/kguzek/usos-survey-filler)! ⭐
 
-Jeśli masz sugestie lub chcesz zgłosić błąd, [stwórz *issue*](https://github.com/kguzek/usos-survey-filler/issues/new).
+Jeśli masz sugestię, feedback lub chcesz zgłosić błąd, [stwórz *issue*](https://github.com/kguzek/usos-survey-filler/issues/new).
 
 ## Prawa autorskie
 

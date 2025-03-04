@@ -8,7 +8,7 @@ It may also work for other Polish universities that use USOS, but has only been 
 
 ## Usage
 
-Install Node.js and run the following command:
+[Install Node.js](https://nodejs.org/en/) and run the following command:
 
 ```bash
 npx usos-survey-filler
@@ -22,11 +22,22 @@ If you provide the credentials, they will be saved to your machine to the `.env`
 
 You can skip the credential prompts by specifying the `USOS_USERNAME` and `USOS_PASSWORD` environment variables.
 
+## FAQ
+
+1. 🥶 The browser doesn't start! (Usually on GNU/Linux)
+   - Try using the headless switch (--headless or -l)
+
+2. 😕 It says it filled out 0 surveys...
+   - Try not using the auto-detected system browser (input N at the prompt)
+
+3. ❓ How does it answer the surveys?
+   - The program selects random answers with predetermined weights, such that it prefers (in order) slightly positive answers, then neutral, then very positive and lastly negative answers. Most questions will be answered relatively positively (i.e. "mostly agree").
+
 ## That's all
 
 If you found this project useful, [leave a star](https://github.com/kguzek/usos-survey-filler)! ⭐
 
-If you have any suggestions or bug reports please [open an issue](https://github.com/kguzek/usos-survey-filler/issues/new).
+If you have any suggestions, feedback or bug reports please [open an issue](https://github.com/kguzek/usos-survey-filler/issues/new).
 
 ## Copyright
 
