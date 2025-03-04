@@ -15,7 +15,7 @@ import ora from "ora";
 import boxen from "boxen";
 import chalk from "chalk";
 var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
-var VERSION = process.env.npm_package_version || "1.4.5";
+var VERSION = process.env.npm_package_version || "1.4.6";
 var cardIntro = boxen(
   chalk.white(`
 Witaj w USOS Survey Filler ${VERSION}!
@@ -238,7 +238,8 @@ var SurveyFiller = class {
       await this.automaticLogin();
     }
   }
-  getAllSurveys() {
+  async getAllSurveys() {
+    await this.navigateToSurveys();
     return this.page.$$eval(
       "ul.no-bullets.separated li.flex",
       (surveys) => surveys.map((survey) => {

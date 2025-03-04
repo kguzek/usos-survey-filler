@@ -129,7 +129,8 @@ export class SurveyFiller {
     }
   }
 
-  private getAllSurveys(): Promise<SurveyInfo[]> {
+  private async getAllSurveys(): Promise<SurveyInfo[]> {
+    await this.navigateToSurveys();
     return this.page.$$eval("ul.no-bullets.separated li.flex", (surveys) =>
       surveys.map((survey) => {
         const links = survey.querySelectorAll("a");
