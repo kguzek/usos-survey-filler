@@ -223,7 +223,7 @@ USOS_PASSWORD=${userPassword}`;
     await writeFile(".env", envContent);
   }
   printInfo("Trwa instalacja programu...");
-  execSync("npx puppeteer browser install chrome", { stdio: "inherit" });
+  execSync("npx puppeteer browsers install chrome", { stdio: "inherit" });
   printInfo("Instalacja uko\u0144czona. Uruchamianie programu...");
   try {
     const surveyFiller = new SurveyFiller(username, userPassword);

@@ -105,7 +105,7 @@ program.action(async () => {
   }
 
   printInfo("Trwa instalacja programu...");
-  execSync("npx puppeteer browser install chrome", { stdio: "inherit" });
+  execSync("npx puppeteer browsers install chrome", { stdio: "inherit" });
   printInfo("Instalacja ukończona. Uruchamianie programu...");
   try {
     const surveyFiller = new SurveyFiller(username, userPassword);
