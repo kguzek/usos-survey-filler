@@ -1,13 +1,15 @@
 {
   "name": "usos-survey-filler",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "An automatic survey filler for WUST's USOS.",
   "type": "module",
   "scripts": {
     "build": "tsup",
     "start": "npx usos-survey-filler"
   },
-  "bin": "./bin/index.js",
+  "bin": {
+    "usos-survey-filler": "bin/index.js"
+  },
   "files": [
     "dist"
   ],
@@ -20,6 +22,7 @@
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "dotenv": "^16.4.7",
+    "ora": "^8.2.0",
     "puppeteer": "^24.3.0"
   },
   "devDependencies": {

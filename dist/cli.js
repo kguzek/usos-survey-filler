@@ -1,11 +1,12 @@
 // src/cli.ts
-import { execSync } from "child_process";
 import { writeFile } from "fs/promises";
 import { input, password } from "@inquirer/prompts";
+import { Browser, BrowserPlatform, install, resolveBuildId } from "@puppeteer/browsers";
 import boxen from "boxen";
 import chalk from "chalk";
 import { program } from "commander";
 import { config } from "dotenv";
+import ora from "ora";
 
 // src/survey-filler.ts
 import puppeteer from "puppeteer";
@@ -144,7 +145,7 @@ var SurveyFiller = class {
 };
 
 // src/cli.ts
-var VERSION = process.env.npm_package_version || "1.2.0";
+var VERSION = process.env.npm_package_version || "1.3.2";
 var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
 var KNOWN_ERROR_MESSAGES = [
   "Most likely the page has been closed",
@@ -199,14 +200,23 @@ ${chalk.underline(REPO_URL + "/issues/new")}
   }
 );
 program.version(VERSION).description("USOS Survey Filler");
-var printRaw = (emoji, message) => console.log(
-  `
-${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}
-`
-);
-var printInfo = (message) => printRaw("\u{1F916}", chalk.cyan(message));
-var printError = (message) => printRaw("\u274C", chalk.red(message));
-var printWarning = (message) => printRaw("\u26A0\uFE0F", chalk.yellow(message));
+var formatMessage = (emoji, message) => `
+${emoji} ${chalk.dim("[")}${chalk.bgCyan.black("USOS Survey Filler")}${chalk.reset.dim("]")} ${message}`;
+var formatInfo = (message) => formatMessage("\u{1F916}", chalk.cyan(message));
+var formatError = (message) => "\n" + formatMessage("\u274C", chalk.red(message));
+var printWarning = (message) => console.warn(formatMessage("\u26A0\uFE0F", chalk.yellow(message)));
+function getPuppeteerPlatform(nodePlatform) {
+  switch (nodePlatform) {
+    case "win32":
+      return BrowserPlatform.WIN64;
+    case "darwin":
+      return BrowserPlatform.MAC;
+    case "linux":
+      return BrowserPlatform.LINUX;
+    default:
+      throw new Error(`Unsupported platform: ${nodePlatform}`);
+  }
+}
 program.action(async () => {
   config();
   console.log(cardIntro);
@@ -222,22 +232,50 @@ program.action(async () => {
 USOS_PASSWORD=${userPassword}`;
     await writeFile(".env", envContent);
   }
-  printInfo("Trwa instalacja programu...");
-  execSync("npx puppeteer browsers install chrome", { stdio: "inherit" });
-  printInfo("Instalacja uko\u0144czona. Uruchamianie programu...");
+  const installation = ora({
+    prefixText: formatInfo("Trwa instalacja programu...")
+  }).start();
+  try {
+    const cacheDir = "./.puppeteer-cache";
+    const platform = getPuppeteerPlatform(process.platform);
+    const browser = Browser.CHROME;
+    const buildId = await resolveBuildId(browser, platform, "latest");
+    await install({
+      cacheDir,
+      platform,
+      buildId,
+      browser
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      printWarning(error.message);
+    }
+    installation.fail(
+      formatError("Nie uda\u0142o si\u0119 zainstalowa\u0107 przegl\u0105darki dla Puppeteer.")
+    );
+    console.log(cardError);
+    process.exitCode = 1;
+    return;
+  }
+  installation.succeed();
+  const execution = ora({
+    prefixText: formatInfo("Instalacja uko\u0144czona. Uruchamianie programu...")
+  }).start();
   try {
     const surveyFiller = new SurveyFiller(username, userPassword);
     await surveyFiller.start();
+    execution.succeed();
     console.log(cardOutro);
   } catch (error) {
     if (error instanceof Error) {
       if (KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
+        execution.succeed(formatInfo("Program zamkni\u0119ty przez u\u017Cytkownika."));
         console.log(cardOutro);
         return;
       }
-      printWarning(chalk.yellow(error.message));
+      printWarning(error.message);
     }
-    printError("Program zako\u0144czy\u0142 si\u0119 niezerowym kodem wyj\u015Bcia.");
+    execution.fail(formatError("Program zako\u0144czy\u0142 si\u0119 niezerowym kodem wyj\u015Bcia."));
     console.log(cardError);
     process.exitCode = 1;
   }
