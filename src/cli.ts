@@ -156,18 +156,17 @@ program.action(async () => {
     execution.succeed();
     console.log(cardOutro);
   } catch (error) {
-    if (error instanceof Error) {
-      if (KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))) {
-        execution.succeed();
-        printInfo("Program zamknięty przez użytkownika.");
-        console.log(cardOutro);
-        return;
-      }
-      printWarning(error.message);
-    } else {
-      printWarning(`Nieznany błąd: ${error}`);
+    if (
+      error instanceof Error &&
+      KNOWN_ERROR_MESSAGES.find((msg) => error.message.includes(msg))
+    ) {
+      execution.succeed();
+      printInfo("Program zamknięty przez użytkownika.");
+      console.log(cardOutro);
+      return;
     }
     execution.fail();
+    printWarning(error instanceof Error ? error.message : `Nieznany błąd: ${error}`);
     console.log(cardError);
     process.exitCode = 1;
   }
