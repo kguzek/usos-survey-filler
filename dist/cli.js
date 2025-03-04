@@ -15,7 +15,7 @@ import ora from "ora";
 import boxen from "boxen";
 import chalk from "chalk";
 var REPO_URL = "https://github.com/kguzek/usos-survey-filler";
-var VERSION = process.env.npm_package_version || "1.4.8";
+var VERSION = process.env.npm_package_version || "1.5.0";
 var cardIntro = boxen(
   chalk.white(`
 Witaj w USOS Survey Filler ${VERSION}!
@@ -76,27 +76,51 @@ var printError = (message) => console.error(formatError(message));
 var printWarning = (message) => console.warn(formatMessage("\u26A0\uFE0F", chalk.yellow(message)));
 
 // src/browser.ts
-var pathsByOS = {
+var BROWSER_CONFIGS = {
   win32: [
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
-    "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe"
+    {
+      name: "chrome",
+      path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    },
+    {
+      name: "chrome",
+      path: "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+    },
+    {
+      name: "firefox",
+      path: "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+    },
+    { name: "firefox", path: "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe" }
   ],
   darwin: [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Firefox.app/Contents/MacOS/firefox"
+    {
+      name: "chrome",
+      path: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    },
+    { name: "firefox", path: "/Applications/Firefox.app/Contents/MacOS/firefox" }
   ],
   linux: [
-    "/usr/bin/google-chrome",
-    "/usr/bin/firefox",
-    "/usr/local/bin/google-chrome",
-    "/usr/local/bin/firefox"
+    {
+      name: "chrome",
+      path: "/usr/bin/google-chrome"
+    },
+    {
+      name: "chrome",
+      path: "/usr/local/bin/google-chrome"
+    },
+    {
+      name: "firefox",
+      path: "/usr/bin/firefox"
+    },
+    {
+      name: "firefox",
+      path: "/usr/local/bin/firefox"
+    }
   ]
 };
 function detectUserBrowser() {
-  const paths = pathsByOS[process.platform] ?? [];
-  return paths.find((path) => existsSync(path));
+  const paths = BROWSER_CONFIGS[process.platform] ?? [];
+  return paths.find(({ path }) => existsSync(path));
 }
 function getPuppeteerPlatform(nodePlatform) {
   switch (nodePlatform) {
@@ -152,16 +176,16 @@ var SurveyFiller = class {
   usosPassword;
   headless;
   surveysFilled = 0;
-  browserPath;
+  browserConfig;
   randomAnswers;
-  constructor(username, password2, headless = false, browserPath, randomAnswers = false) {
+  constructor(username, password2, headless = false, browserConfig, randomAnswers = false) {
     this.usosUsername = username || "";
     this.usosPassword = password2 || "";
     this.headless = headless;
     if (headless && (this.usosUsername === "" || this.usosPassword === "")) {
       throw new Error("Tryb headless wymaga podania loginu i has\u0142a.");
     }
-    this.browserPath = browserPath;
+    this.browserConfig = browserConfig;
     this.randomAnswers = randomAnswers;
   }
   getSurveysFilled() {
@@ -171,7 +195,8 @@ var SurveyFiller = class {
     this.browser = await puppeteer.launch({
       headless: this.headless ? void 0 : false,
       args: ["--window-size=1600,900", "--window-position=100,100"],
-      executablePath: this.browserPath
+      executablePath: this.browserConfig?.path,
+      browser: this.browserConfig?.name
     });
     const pages = await this.browser.pages();
     if (pages.length > 0) {
@@ -340,7 +365,8 @@ var SurveyFiller = class {
 var KNOWN_ERROR_MESSAGES = [
   "Most likely the page has been closed",
   "Navigating frame was detached",
-  "Target closed"
+  "Target closed",
+  "Frame detached"
 ];
 program.version(VERSION, "-v, --version", "Wy\u015Bwietl numer wersji").description("USOS Survey Filler").helpOption("-h, --help", "Wy\u015Bwietl dost\u0119pne opcje").option(
   "-l, --headless",
@@ -366,21 +392,21 @@ program.action(async () => {
 USOS_PASSWORD=${userPassword}`;
     await writeFile(".env", envContent);
   }
-  let browserPath = detectUserBrowser();
-  if (browserPath == null) {
+  let browserConfig = detectUserBrowser();
+  if (browserConfig == null) {
     printInfo(
       "Nie wykryto \u015Bciezki instalacyjnej przegl\u0105darki. My\u015Blisz, \u017Ce to w b\u0142\u0119dzie? Zg\u0142o\u015B na GitHubie!"
     );
   } else {
     const useDetectedPath = await confirm({
-      message: `U\u017Cy\u0107 wykrytej zainstalowanej przegl\u0105darki: ${chalk2.underline(browserPath)}${chalk2.reset("?")}`,
+      message: `U\u017Cy\u0107 wykrytej zainstalowanej przegl\u0105darki: ${chalk2.underline(browserConfig.path)}${chalk2.reset("?")}`,
       transformer: (input2) => input2 ? chalk2.green("Tak") : chalk2.red("Nie")
     });
     if (!useDetectedPath) {
-      browserPath = void 0;
+      browserConfig = void 0;
     }
   }
-  if (browserPath == null) {
+  if (browserConfig == null) {
     await installBrowser();
   }
   const execution = ora2({
@@ -391,7 +417,7 @@ USOS_PASSWORD=${userPassword}`;
       username,
       userPassword,
       options.headless,
-      browserPath,
+      browserConfig,
       !options.hardcoded
     );
     await surveyFiller.start();

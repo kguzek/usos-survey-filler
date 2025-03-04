@@ -6,30 +6,55 @@ import { existsSync } from "fs";
 import { Browser, BrowserPlatform, install, resolveBuildId } from "@puppeteer/browsers";
 import ora from "ora";
 
+import type { BrowserConfig } from "./survey-filler";
 import { cardError, formatInfo, printError, printWarning } from "./logging";
 
-const pathsByOS: { [platform in NodeJS.Platform]?: string[] } = {
+const BROWSER_CONFIGS: { [platform in NodeJS.Platform]?: BrowserConfig[] } = {
   win32: [
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
-    "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+    {
+      name: "chrome",
+      path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    },
+    {
+      name: "chrome",
+      path: "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    },
+    {
+      name: "firefox",
+      path: "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+    },
+    { name: "firefox", path: "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe" },
   ],
   darwin: [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Firefox.app/Contents/MacOS/firefox",
+    {
+      name: "chrome",
+      path: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    },
+    { name: "firefox", path: "/Applications/Firefox.app/Contents/MacOS/firefox" },
   ],
   linux: [
-    "/usr/bin/google-chrome",
-    "/usr/bin/firefox",
-    "/usr/local/bin/google-chrome",
-    "/usr/local/bin/firefox",
+    {
+      name: "chrome",
+      path: "/usr/bin/google-chrome",
+    },
+    {
+      name: "chrome",
+      path: "/usr/local/bin/google-chrome",
+    },
+    {
+      name: "firefox",
+      path: "/usr/bin/firefox",
+    },
+    {
+      name: "firefox",
+      path: "/usr/local/bin/firefox",
+    },
   ],
 };
 
-export function detectUserBrowser() {
-  const paths = pathsByOS[process.platform] ?? [];
-  return paths.find((path) => existsSync(path));
+export function detectUserBrowser(): BrowserConfig | undefined {
+  const paths = BROWSER_CONFIGS[process.platform] ?? [];
+  return paths.find(({ path }) => existsSync(path));
 }
 
 function getPuppeteerPlatform(nodePlatform: string): BrowserPlatform {

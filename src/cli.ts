@@ -27,6 +27,7 @@ const KNOWN_ERROR_MESSAGES = [
   "Most likely the page has been closed",
   "Navigating frame was detached",
   "Target closed",
+  "Frame detached",
 ];
 
 program
@@ -68,23 +69,23 @@ program.action(async () => {
     await writeFile(".env", envContent);
   }
 
-  let browserPath = detectUserBrowser();
+  let browserConfig = detectUserBrowser();
 
-  if (browserPath == null) {
+  if (browserConfig == null) {
     printInfo(
       "Nie wykryto ściezki instalacyjnej przeglądarki. Myślisz, że to w błędzie? Zgłoś na GitHubie!",
     );
   } else {
     const useDetectedPath = await confirm({
-      message: `Użyć wykrytej zainstalowanej przeglądarki: ${chalk.underline(browserPath)}${chalk.reset("?")}`,
+      message: `Użyć wykrytej zainstalowanej przeglądarki: ${chalk.underline(browserConfig.path)}${chalk.reset("?")}`,
       transformer: (input) => (input ? chalk.green("Tak") : chalk.red("Nie")),
     });
     if (!useDetectedPath) {
-      browserPath = undefined;
+      browserConfig = undefined;
     }
   }
 
-  if (browserPath == null) {
+  if (browserConfig == null) {
     await installBrowser();
   }
 
@@ -96,7 +97,7 @@ program.action(async () => {
       username,
       userPassword,
       options.headless,
-      browserPath,
+      browserConfig,
       !options.hardcoded,
     );
     await surveyFiller.start();

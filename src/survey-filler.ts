@@ -2,7 +2,7 @@
 /*            USOS Survey Filler          */
 /*       Copyright © 2025 Konrad Guzek    */
 
-import type { Browser, Page } from "puppeteer";
+import type { Browser, Page, SupportedBrowser } from "puppeteer";
 import puppeteer from "puppeteer";
 
 const USOS_HOME_URL = "https://web.usos.pwr.edu.pl/kontroler.php?_action=home/index";
@@ -16,6 +16,11 @@ interface SurveyInfo {
   link: string | null;
 }
 
+export interface BrowserConfig {
+  path: string;
+  name: SupportedBrowser;
+}
+
 export class SurveyFiller {
   private page!: Page;
   private browser!: Browser;
@@ -24,14 +29,14 @@ export class SurveyFiller {
   private usosPassword: string;
   private headless: boolean;
   private surveysFilled = 0;
-  private browserPath?: string;
+  private browserConfig?: BrowserConfig;
   private randomAnswers: boolean;
 
   constructor(
     username?: string,
     password?: string,
     headless = false,
-    browserPath?: string,
+    browserConfig?: BrowserConfig,
     randomAnswers = false,
   ) {
     this.usosUsername = username || "";
@@ -40,7 +45,7 @@ export class SurveyFiller {
     if (headless && (this.usosUsername === "" || this.usosPassword === "")) {
       throw new Error("Tryb headless wymaga podania loginu i hasła.");
     }
-    this.browserPath = browserPath;
+    this.browserConfig = browserConfig;
     this.randomAnswers = randomAnswers;
   }
 
@@ -52,7 +57,8 @@ export class SurveyFiller {
     this.browser = await puppeteer.launch({
       headless: this.headless ? undefined : false,
       args: ["--window-size=1600,900", "--window-position=100,100"],
-      executablePath: this.browserPath,
+      executablePath: this.browserConfig?.path,
+      browser: this.browserConfig?.name,
     });
 
     const pages = await this.browser.pages();
@@ -101,8 +107,8 @@ export class SurveyFiller {
     await this.wait();
     if (this.page.url() !== USOS_HOME_URL) {
       await this.manualLogin(
-          "Niepoprawne dane loginowe. Proszę zalogować się manualnie.",
-        );
+        "Niepoprawne dane loginowe. Proszę zalogować się manualnie.",
+      );
     }
   }
 
